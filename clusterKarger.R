@@ -28,28 +28,34 @@ composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","v
     newtem=liste[[idx]]$t1+liste[[idx]]$t2
     newpoint=c(V1,V2) #creation of a new vertex, union of two vertices, case and controls associated are summed
     liste[[idx]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0) #delete the selected edge
+    #and delete doublons !!!
     lv1=lapply(liste, function(i){ if(!is.na(i)){ i$v1}  else{NA}} )
     #print(liste[[1]])
     lv2=lapply(liste, function(i) { if(!is.na(i)){ i$v2}  else{NA}})
-    toChange=which(sapply(lv1, function(j) prod(j==V1)| prod(j==V2) ) + sapply(lv2, function(j) prod(j==V1)| prod(j==V2) )==1) #select vertices adjacent to the new vertices (one of the previous vertices)
+    toChange=which((sapply(lv1, function(j) prod(j==V1)| prod(j==V2) ) + sapply(lv2, function(j) prod(j==V1)| prod(j==V2) ))>0) #select vertices adjacent to the new vertices (one of the previous vertices)
     for(tc in toChange){
-      if(prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)  ){ #remplacer v1
-        liste[[tc]]$v1=newpoint
-        liste[[tc]]$c1=newcas
-        liste[[tc]]$t1=newtem
-        liste[[tc]]$p=fisher.test(matrix(c(newtem,newcas,liste[[tc]]$t2,liste[[tc]]$c2),ncol=2))$p.value #we have to renew edges and reset p-value
-      }
-      if(prod(liste[[tc]]$v2==V1) + prod(liste[[tc]]$v2==V2)){
-        liste[[tc]]$v2=newpoint
-        liste[[tc]]$c2=newcas
-        liste[[tc]]$t2=newtem
-        #print(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1,ncol=2)))
-        liste[[tc]]$p=fisher.test(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1),ncol=2))$p.value
-        #maybe don't do again fisher test, but keep sum/mean of last fisher's p-value
-      }
-      if(liste[[tc]]$v1==liste[[tc]]$v2){
+      if((prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)) & (prod(liste[[tc]]$v2==V1) + prod(liste[[tc]]$v2==V2))){
         liste[[tc]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0)
+      }else{
+        if(prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)  ){ #remplacer v1
+          liste[[tc]]$v1=newpoint
+          liste[[tc]]$c1=newcas
+          liste[[tc]]$t1=newtem
+          liste[[tc]]$p=fisher.test(matrix(c(newtem,newcas,liste[[tc]]$t2,liste[[tc]]$c2),ncol=2))$p.value #we have to renew edges and reset p-value
+        }
+        if(prod(liste[[tc]]$v2==V1) + prod(liste[[tc]]$v2==V2)){
+          liste[[tc]]$v2=newpoint
+          liste[[tc]]$c2=newcas
+          liste[[tc]]$t2=newtem
+          #print(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1,ncol=2)))
+          liste[[tc]]$p=fisher.test(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1),ncol=2))$p.value
+          #maybe don't do again fisher test, but keep sum/mean of last fisher's p-value
+        }
+        if(liste[[tc]]$v1==liste[[tc]]$v2){
+          liste[[tc]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0)
+        }
       }
+      
     }
     pv=sapply(liste, function(i) i$p)
   }
@@ -60,7 +66,6 @@ composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","v
   
   
 }
-
 
 getGNeighbour=function(x,y,cas,tem,r){
   liste=list()
