@@ -1,22 +1,21 @@
-##with call to neighbour function
+##Clustering on Spatial data of coordinates @arg x,y to find cases aggregates in epidemiology (with @arg cas cases and @arg tem controls)
+#Neighborhood defined by @arg voisin, voronoi tesseltation or by discus graph (with @arg radius r)
+#probabilist algorithm if @arg random=TRUE, else determinist 
+#stop criterion @arg alpha, the threshold in fisher test
+## This algorithm makes cluster on a neighborhood graph, based on the Karger's min-cut algorithm
+## Contiguous vertices/components are aggregated with a probability=fisher's exact test p-value (similarity score here),
+##until each paired are too dissimilar
 composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","voronoi"),random=TRUE){
-  # trouver toutes les frontières
-  #leur appliquer un score
-  #tirer une frontière au hasard, pondéré par son score
-  #fusionner les deux points séparés par cette frontière
-  #retourner au debut
+  ## INIT: neighborhood graph construction
   if(voisin[1]=="radius") liste=getGNeighbour(x,y,cas,tem,r)
   else liste=d=getGNeighbourVoronoi(x,y,cas,tem)
   
-  #frontiere=matrix(0,ncol=7,nrow=0)
-  #print(liste)
-  #frontiere=frontiere[-1,]
-  #frontiere[which(frontiere[,7]<alpha)]=0
-  pv=sapply(liste, function(i) i$p) #all the p-value
+  # edge weighted by fisher's exact test p-value
+  pv=sapply(liste, function(i) i$p) 
   while(length(which(pv>alpha))>0){ #if no adjacent vertices/clusters have equivalent prevalence, stop
     if(length(which(pv>alpha))>1){
       pv[which(pv<alpha)]=0 #don't group vertices if their p-value is under alpha risk
-      #if(sum(pv)==0) return(cbind(x,y))
+
       weight=pv/sum(pv)
       if(random) idx=sample(1:length(pv),1,prob=weight) #select a random edge, weighted by the p-values
       else idx=which.max(weight)
@@ -28,16 +27,16 @@ composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","v
     newtem=liste[[idx]]$t1+liste[[idx]]$t2
     newpoint=c(V1,V2) #creation of a new vertex, union of two vertices, case and controls associated are summed
     liste[[idx]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0) #delete the selected edge
-    #and delete doublons !!!
+
     lv1=lapply(liste, function(i){ if(!is.na(i)){ i$v1}  else{NA}} )
-    #print(liste[[1]])
+
     lv2=lapply(liste, function(i) { if(!is.na(i)){ i$v2}  else{NA}})
     toChange=which((sapply(lv1, function(j) prod(j==V1)| prod(j==V2) ) + sapply(lv2, function(j) prod(j==V1)| prod(j==V2) ))>0) #select vertices adjacent to the new vertices (one of the previous vertices)
     for(tc in toChange){
       if((prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)) & (prod(liste[[tc]]$v2==V1) + prod(liste[[tc]]$v2==V2))){
-        liste[[tc]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0)
+        liste[[tc]]=list(v1=NA,v2=NA,t1=NA,t2=NA,p=0) #delete the selected edge duplicates
       }else{
-        if(prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)  ){ #remplacer v1
+        if(prod(liste[[tc]]$v1==V1) + prod(liste[[tc]]$v1==V2)  ){ #replace vertices
           liste[[tc]]$v1=newpoint
           liste[[tc]]$c1=newcas
           liste[[tc]]$t1=newtem
@@ -47,7 +46,7 @@ composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","v
           liste[[tc]]$v2=newpoint
           liste[[tc]]$c2=newcas
           liste[[tc]]$t2=newtem
-          #print(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1,ncol=2)))
+
           liste[[tc]]$p=fisher.test(matrix(c(newtem,newcas,liste[[tc]]$t1,liste[[tc]]$c1),ncol=2))$p.value
           #maybe don't do again fisher test, but keep sum/mean of last fisher's p-value
         }
@@ -59,14 +58,13 @@ composanteConnexeKarger=function(x,y,cas,tem,r=1,alpha=0.05,voisin=c("radius","v
     }
     pv=sapply(liste, function(i) i$p)
   }
-  
-  
-  
+  #delete duplicates
   return(unique(c(sapply(liste[which(sapply(liste, function(i) prod(!is.na(i$v1)))==1)],function(j) j$v1),sapply(liste[which(sapply(liste, function(i) prod(!is.na(i$v2)))==1)],function(j) j$v2))))
   
   
 }
 
+#Construct a neighborhood graph (each pair of points with a distance< @arg r are linked)
 getGNeighbour=function(x,y,cas,tem,r){
   liste=list()
   #frontiere=matrix(0,ncol=7,nrow=0)
@@ -86,7 +84,7 @@ getGNeighbour=function(x,y,cas,tem,r){
   return(liste)
 }
 
-
+#Construct a neighborhood graph with Voronoi tesselation
 getGNeighbourVoronoi=function(x,y,cas,tem){
   liste=list()
   ddir=deldir(x,y)
@@ -102,7 +100,7 @@ getGNeighbourVoronoi=function(x,y,cas,tem){
   return(liste)
 }
 
-
+#tranform main algorithm return into a vector of cluster numbers
 listeToCLusters=function(liste,sorted=TRUE){
   cl=unlist(sapply(1:length(liste), function(i) rep(i, length(liste[[i]]))))
   names(cl)=unlist(liste)
@@ -110,6 +108,7 @@ listeToCLusters=function(liste,sorted=TRUE){
   return(cl)
 }
 
+#get prevalence of each clusters
 clusterToPrev=function(cas,tem,clusters,idx=1:length(clusters), table=FALSE){
   toRet=clusters
   for(i in unique(clusters)){
@@ -126,3 +125,14 @@ clusterToPrev=function(cas,tem,clusters,idx=1:length(clusters), table=FALSE){
   } 
   return(toRet)
 }
+
+
+###############################
+#   Examples                  #
+###############################
+karger=composanteConnexeKarger2(corine$x,corine$y,corine$cas,corine$temoins,voisin = "voronoi",alpha=0.02)
+cluster.karger=listeToCLusters(karger2)
+prev.karger=clusterToPrev(corine$cas,corine$temoins,cluster.karger)
+g+geom_point(aes(x=corine$x,y=corine$y,col=prev.karger))+labs(col="")+scale_color_gradient2(low="green",mid="white",high="red",midpoint = 0.29)
+
+
