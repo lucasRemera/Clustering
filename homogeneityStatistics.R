@@ -1,3 +1,8 @@
+##Note : utilisation sur le wiki
+
+###################################
+# Potthoff-Whittinghill statistic #
+###################################
 PWstat=function(cas,temoins){
   P=sum(cas)/sum(cas+temoins)
   obs=cas+temoins
