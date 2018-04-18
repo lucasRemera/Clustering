@@ -19,6 +19,43 @@ replicatePW=function(ns=100,ra1=0.2,ra2=0.2,unif=FALSE){
   return(PWstat(cas,obs-cas))
 }
 
+
+
+################################
+# delta statistic              #
+################################
+
+
+kPPV=function(x0,y0,xref,yref, k=3,seuil=Inf,nmin=0,check=TRUE){
+  d=sqrt((x0-xref)**2+(y0-yref)**2)
+  i=order(d)[1:k]
+  if(min(d)==0 & check) i=order(d)[2:(k+1)]
+  
+  if(min(d)>seuil){
+    i=NULL
+  } 
+  else{
+    i=i[which(d[i]<seuil)]
+    
+  }
+  return(i)
+}
+
+deltaStat=function(data=corine,k=5,comparison=c("knn","random"),retour=c("pvalue","statistic","sum")){
+  P0=sum(data$cas)/sum(data$obs)
+  if(comparison[1]=="knn") deltaQ=sapply(1:nrow(data),function(i) sum((data$p[i] - data$p[kPPV(data$x[i],data$y[i],data$x,data$y,k = k)])**2/
+                                                (P0*(1-P0)*(1/data$obs[i]+1/data$obs[kPPV(data$x[i],data$y[i],data$x,data$y,k=k)] ))   ))
+  else{
+    deltaQ=sapply(1:nrow(data),function(i){ 
+      cc=sample(c(1:nrow(data))[-i],k)
+      sum((data$p[i] - data$p[cc])**2/(P0*(1-P0)*(1/data$obs[i]+1/data$obs[cc] ))   )})
+
+  }
+  if(retour[1]=="sum") return(sum(deltaQ))
+  else if(retour[1]=="statistic") return(deltaQ)
+  else return(1-pchisq(sum(deltaQ),k*nrow(data)))
+}
+
 simDelta=function(p1=NA,p2=p1,pourc2=0, nsim=100,k=5,data=corine,retour=c("pvalue","statistic","sum")){
   P0=sum(data$cas)/(sum(data$temoins)+sum(data$cas))
   if(is.na(p1)) p1=P0
@@ -53,3 +90,5 @@ simDelta=function(p1=NA,p2=p1,pourc2=0, nsim=100,k=5,data=corine,retour=c("pvalu
   })
   return(pv)
 }
+
+
