@@ -179,3 +179,58 @@ searchByConvex=function(n0=3,idx0=NULL,nsim=3000,d=1,toLog=FALSE,minn=3,maxx=Inf
   
 }
 
+
+############################
+# Recherche du cercle ######
+############################
+
+ORCircle=function(X,data){
+  CAS=sum(data$cas)
+  TEMOINS=sum(data$temoins)
+  x0=X[1]
+  y0=X[2]
+  r0=X[3]
+  idx=which(sqrt((data$x-x0)**2+(data$y-y0)**2)<=r0)
+  casIN=sum(data$cas[idx])
+  temIN=sum(data$temoins[idx])
+  m=t(matrix(c(TEMOINS-temIN,temIN,CAS-casIN,casIN),ncol=2))
+  t=fisher.test(m)
+  return(list(idx=idx,OR=t$estimate,p=t$p.value,c=casIN,t=temIN))
+  
+}
+
+
+findKulldorffCircle=function(x0,y0,r0,data,rmaxx=0.25,casminn=5,pvalue=c(NULL,"fisher","monte-carlo")){
+  vraisemblanceOpt=function(X,data2=data,rmax=rmaxx,casmin=casminn,coef=-1){
+    CAS=sum(data2$cas)
+    TEMOINS=sum(data2$temoins)
+    x0=X[1]
+    y0=X[2]
+    r0=X[3]
+    idx=which(sqrt((data2$x-x0)**2+(data2$y-y0)**2)<=r0)
+    casIN=sum(data2$cas[idx])
+    temIN=sum(data2$temoins[idx])
+    casOUT=CAS-casIN
+    temOUT=TEMOINS-temIN
+    if((casIN+temIN)*(casOUT+temOUT)==0) return(Inf)
+    LL0=CAS*(log(CAS)-log((CAS+TEMOINS))) + TEMOINS*(log(TEMOINS)-log((CAS+TEMOINS)))
+    if(r0<=0) return(10)
+    if(r0>rmax) return(5)
+    if(TRUE){
+      LL1=casIN*(log(casIN)-log((casIN+temIN))) + temIN*(log(temIN)-log((casIN+temIN)))
+      LL2=casOUT*(log(casOUT)-log((casOUT+temOUT))) + temOUT*(log(temOUT)-log((casOUT+temOUT)))
+    }
+    else{
+      
+      LL1=LL0
+      LL2=0
+    }
+    return(coef*(LL1+LL2-LL0))
+  }
+  opt=optim(c(x0,y0,r0),vraisemblanceOpt)
+  if(is.null(pvalue)) return(opt$par)
+  else{
+    or=ORCircle(c(opt$par[1],opt$par[2],opt$par[3]),data)
+    return(c(opt$par,or))
+  } 
+}
