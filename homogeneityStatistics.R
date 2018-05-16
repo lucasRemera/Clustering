@@ -112,4 +112,22 @@ simDelta=function(p1=NA,p2=p1,pourc2=0, nsim=100,k=5,data=corine,retour=c("pvalu
   return(pv)
 }
 
+############
+# Examples #
+############
 
+test.obs=rpois(1000,10000)
+test.cas=rbinom(1000,test.obs,0.01)
+test.temoins=test.obs-test.cas
+PWstat(test.cas,test.temoins) #homogeneity
+
+test.cas=rbinom(1000,test.obs,runif(1000,0.005,0.02))
+test.temoins=test.obs-test.cas
+PWstat(test.cas,test.temoins) #heterogeneity
+
+test.obs=rpois(1000,10000)
+test.cas=rbinom(1000,test.obs,0.2)
+deltaStat(data.frame(cas=test.cas,obs=test.obs,p=test.cas/test.obs),comparison = "random",k=11)#homogeneity
+
+test.cas=rbinom(1000,test.obs,sample(c(0.1,0.3),1000,T))
+deltaStat(data.frame(cas=test.cas,obs=test.obs,p=test.cas/test.obs),comparison = "random",k=11)#heterogeneity
