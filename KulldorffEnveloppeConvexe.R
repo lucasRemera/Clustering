@@ -15,7 +15,7 @@ vraisemblance=function(idx,data=corine,coef=1,MC=FALSE){
   casOUT=CAS-casIN
   temOUT=TEMOINS-temIN
   #print(paste(casIN,temIN))
-  if((casIN+temIN)*(casOUT+temOUT)==0) return(Inf)
+  if(((casIN+temIN)==0)&((casOUT+temOUT)==0)) return(Inf)
   #L0=(CAS/(CAS+TEMOINS))**CAS * (1-CAS/(CAS+TEMOINS))**(TEMOINS)
   LL0=CAS*(log(CAS)-log((CAS+TEMOINS))) + TEMOINS*(log(TEMOINS)-log((CAS+TEMOINS)))
   # 
