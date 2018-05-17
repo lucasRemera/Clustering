@@ -24,8 +24,8 @@ spectralPartitionnement=function(m,k=2,scaled=FALSE){
   #L=(Di)%*%m%*%Di
   #vp=eigen(L)$values
   VP=eigen(L)$vectors #Vecteurs propres en colonne
-  if(scaled) VP2=scale(VP2)
   VP2=VP[,(N-k+1):N] #on récupère les k derniers VP
+  if(scaled) VP2=scale(VP2)
   return(kmeans(VP2,k)$cluster)
 }
 
