@@ -4,9 +4,9 @@ kernelAcp=function(data,scaled=TRUE,transformation=c("linear","polynomial","gaus
   else{
     varcovar=sapply(1:ncol(data), function(i){
       sapply(1:ncol(data), function(j){
-        if(transformation[1]=="polynomial") (data[,i]%*%data[,j]/(nrow(data)-1)+gamma)**d #polynomial
-        if(transformation[1]=="gaussian") exp(-sum((data[,i]-data[,j])**2)/(2*sigma**2))
-        if(transformation[1]=="laplacian") exp(-alpha*sqrt(sum((data[,i]-data[,j])**2)))
+        if(transformation[1]=="polynomial") return((data[,i]%*%data[,j]/(nrow(data)-1)+gamma)**d) #polynomial
+        if(transformation[1]=="gaussian") return(exp(-sum((data[,i]-data[,j])**2)/(2*sigma**2)))
+        if(transformation[1]=="laplacian") return(exp(-alpha*sqrt(sum((data[,i]-data[,j])**2))))
       })
     })
   }
