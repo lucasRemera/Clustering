@@ -1,4 +1,4 @@
-kernelAcp=function(data,scaled=TRUE,transformation=c("linear","polynomial","gaussian"),sigma=1,gamma=1,d=1,plot.value=FALSE){
+kernelAcp=function(data,scaled=TRUE,transformation=c("linear","polynomial","gaussian","laplacian"),sigma=1,gamma=1,d=1,alpha=1,plot.value=FALSE){
   if(scaled) data=scale(data,scale = T,center = T)
   if(transformation[1]=="linear") varcovar=t(data)%*%(data)/(nrow(data)-1)
   else{
@@ -6,6 +6,7 @@ kernelAcp=function(data,scaled=TRUE,transformation=c("linear","polynomial","gaus
       sapply(1:ncol(data), function(j){
         if(transformation[1]=="polynomial") (data[,i]%*%data[,j]/(nrow(data)-1)+gamma)**d #polynomial
         if(transformation[1]=="gaussian") exp(-sum((data[,i]-data[,j])**2)/(2*sigma**2))
+        if(transformation[1]=="laplacian") exp(-alpha*sqrt(sum((data[,i]-data[,j])**2)))
       })
     })
   }
